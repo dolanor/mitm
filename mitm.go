@@ -8,13 +8,14 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"fmt"
 	"log"
 	"math/big"
 	"net"
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/fatih/color"
 )
 
 var remoteURL string
@@ -37,12 +38,15 @@ func main() {
 		panic(err)
 	}
 
+	var clientID int
 	for {
 		conn, err := l.Accept()
 		if err != nil {
 			panic(err)
 		}
-		go handle(conn, url.Hostname())
+
+		clientID++
+		go handle(conn, url.Hostname(), clientID)
 	}
 }
 
@@ -78,8 +82,7 @@ func generateSelfSignedCert(remoteHostname string) tls.Certificate {
 	}
 }
 
-func handle(conn net.Conn, remoteHostname string) {
-	fmt.Println("somebody connected")
+func handle(conn net.Conn, remoteHostname string, clientID int) {
 	// ignoring error on close for now
 	defer conn.Close()
 
@@ -89,25 +92,29 @@ func handle(conn net.Conn, remoteHostname string) {
 	if err != nil {
 		panic("you" + err.Error())
 	}
-	log.Println("connected to remote", remoteURL)
 
-	go handleRemote(conn, remoteConn)
+	colorIndex := (clientID % 8) + int(color.FgBlack)
+	c := color.New(color.Attribute(colorIndex))
+
+	log.Printf(c.Sprintf("| %3d | ==m-- | %s", clientID, "connected to remote"))
+
+	go handleRemote(conn, remoteConn, clientID, c)
 
 	s := bufio.NewScanner(conn)
 
 	for s.Scan() {
 
-		log.Println("⇒m  :", s.Text())
+		log.Printf(c.Sprintf("| %3d | =>m   | %s", clientID, s.Text()))
 
 		_, err = remoteConn.Write(append(s.Bytes(), '\n'))
 		if err != nil {
 			panic(err)
 		}
-		log.Println("  m→:", string(s.Text()))
+		log.Printf(c.Sprintf("| %3d |   m-> | %s", clientID, s.Text()))
 	}
 }
 
-func handleRemote(conn net.Conn, remoteConn net.Conn) {
+func handleRemote(conn net.Conn, remoteConn net.Conn, clientID int, c *color.Color) {
 	// ignoring error on close for now
 	defer conn.Close()
 
@@ -115,13 +122,13 @@ func handleRemote(conn net.Conn, remoteConn net.Conn) {
 	s := bufio.NewScanner(remoteConn)
 
 	for s.Scan() {
-		log.Println("  m←:", s.Text())
+		log.Printf(c.Sprintf("| %3d |   m<- | %s", clientID, s.Text()))
 
 		_, err := conn.Write(append(s.Bytes(), '\n'))
 		if err != nil {
 			panic(err)
 		}
-		log.Println("⇐m  :", s.Text())
+		log.Printf(c.Sprintf("| %3d | <=m   | %s", clientID, s.Text()))
 	}
 
 }
