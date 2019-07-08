@@ -2,26 +2,35 @@ package main
 
 import (
 	"bufio"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"fmt"
 	"log"
+	"math/big"
 	"net"
+	"net/url"
 	"os"
+	"time"
 )
 
 var remoteURL string
 
 func main() {
 	remoteURL = os.Getenv("MITM_REMOTE_URL")
-
-	kp, err := tls.LoadX509KeyPair("/home/dolanor/cert.pem", "/home/dolanor/key.pem")
+	url, err := url.Parse(remoteURL)
 	if err != nil {
 		panic(err)
 	}
 
+	cert := generateSelfSignedCert(url.Hostname())
+
 	l, err := tls.Listen("tcp", ":9999", &tls.Config{
 		Certificates: []tls.Certificate{
-			kp,
+			cert,
 		},
 	})
 	if err != nil {
@@ -33,18 +42,49 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		go handle(conn)
+		go handle(conn, url.Hostname())
 	}
 }
 
-func handle(conn net.Conn) {
+func generateSelfSignedCert(remoteHostname string) tls.Certificate {
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		panic(err)
+	}
+
+	now := time.Now()
+
+	template := x509.Certificate{
+		SerialNumber:          big.NewInt(now.Unix()),
+		Subject:               pkix.Name{Organization: []string{"Listening Partner Inc."}},
+		NotBefore:             now,
+		NotAfter:              now.AddDate(0, 0, 1),
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+		IsCA:                  true,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+	}
+
+	template.DNSNames = append(template.DNSNames, remoteHostname)
+
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	if err != nil {
+		panic(err)
+	}
+
+	return tls.Certificate{
+		Certificate: [][]byte{derBytes},
+		PrivateKey:  priv,
+	}
+}
+
+func handle(conn net.Conn, remoteHostname string) {
 	fmt.Println("somebody connected")
 	// ignoring error on close for now
 	defer conn.Close()
 
 	remoteConn, err := tls.Dial("tcp", remoteURL, &tls.Config{
-		InsecureSkipVerify: true,
-		ServerName:         "mail.evereska.org",
+		ServerName: remoteHostname,
 	})
 	if err != nil {
 		panic("you" + err.Error())
