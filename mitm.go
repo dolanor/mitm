@@ -93,20 +93,17 @@ func handle(conn net.Conn, remoteHostname string) {
 
 	go handleRemote(conn, remoteConn)
 
-	r := bufio.NewReader(conn)
+	s := bufio.NewScanner(conn)
 
-	for {
-		cmd, _, err := r.ReadLine()
+	for s.Scan() {
+
+		log.Println("⇒m  :", s.Text())
+
+		_, err = remoteConn.Write(append(s.Bytes(), '\n'))
 		if err != nil {
 			panic(err)
 		}
-		log.Println("⇒m  :", string(cmd))
-
-		_, err = remoteConn.Write([]byte(append(cmd, '\n')))
-		if err != nil {
-			panic(err)
-		}
-		log.Println("  m→:", string(cmd))
+		log.Println("  m→:", string(s.Text()))
 	}
 }
 
@@ -114,20 +111,17 @@ func handleRemote(conn net.Conn, remoteConn net.Conn) {
 	// ignoring error on close for now
 	defer conn.Close()
 
-	r := bufio.NewReader(remoteConn)
+	//r := bufio.NewReader(remoteConn)
+	s := bufio.NewScanner(remoteConn)
 
-	for {
-		cmd, _, err := r.ReadLine()
+	for s.Scan() {
+		log.Println("  m←:", s.Text())
+
+		_, err := conn.Write(append(s.Bytes(), '\n'))
 		if err != nil {
 			panic(err)
 		}
-		log.Println("  m←:", string(cmd))
-
-		_, err = conn.Write([]byte(append(cmd, '\n')))
-		if err != nil {
-			panic(err)
-		}
-		log.Println("⇐m  :", string(cmd))
+		log.Println("⇐m  :", s.Text())
 	}
 
 }
