@@ -8,28 +8,34 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"flag"
 	"log"
 	"math/big"
 	"net"
-	"net/url"
-	"os"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
 )
 
-var remoteURL string
-
 func main() {
-	remoteURL = os.Getenv("MITM_REMOTE_URL")
-	url, err := url.Parse(remoteURL)
-	if err != nil {
-		panic(err)
+	type config struct {
+		connectURL string
+		listenURL  string
+	}
+	var cfg config
+	flag.StringVar(&cfg.listenURL, "listen", "", "hostname to listen to, in the form of: host:port")
+	flag.StringVar(&cfg.connectURL, "connect", "", "url to connect to, in the form of: host:port")
+	flag.Parse()
+
+	remoteHost := strings.Split(cfg.connectURL, ":")
+	if len(remoteHost) != 2 {
+		panic("wrong -connect parameter, must be: host:port")
 	}
 
-	cert := generateSelfSignedCert(url.Hostname())
+	cert := generateSelfSignedCert(remoteHost[0])
 
-	l, err := tls.Listen("tcp", ":9999", &tls.Config{
+	l, err := tls.Listen("tcp", cfg.listenURL, &tls.Config{
 		Certificates: []tls.Certificate{
 			cert,
 		},
@@ -46,7 +52,7 @@ func main() {
 		}
 
 		clientID++
-		go handle(conn, url.Hostname(), clientID)
+		go handle(conn, remoteHost, clientID)
 	}
 }
 
@@ -82,15 +88,15 @@ func generateSelfSignedCert(remoteHostname string) tls.Certificate {
 	}
 }
 
-func handle(conn net.Conn, remoteHostname string, clientID int) {
+func handle(conn net.Conn, remoteHost []string, clientID int) {
 	// ignoring error on close for now
 	defer conn.Close()
 
-	remoteConn, err := tls.Dial("tcp", remoteURL, &tls.Config{
-		ServerName: remoteHostname,
+	remoteConn, err := tls.Dial("tcp", strings.Join(remoteHost, ":"), &tls.Config{
+		ServerName: remoteHost[0],
 	})
 	if err != nil {
-		panic("you" + err.Error())
+		panic(err)
 	}
 
 	colorIndex := (clientID % 8) + int(color.FgBlack)
