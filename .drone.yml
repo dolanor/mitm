@@ -8,7 +8,7 @@ clone:
 
 steps:
 - name: clone
-  image: alpine:git
+  image: golang:1.13
   commands:
   - git clone https://github.com/dolanor/mitm /drone/src/go/src/github.com/dolanor/mitm
   - git checkout $DRONE_COMMIT
