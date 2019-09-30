@@ -10,8 +10,10 @@ steps:
 - name: clone
   image: golang:1.13
   commands:
-  - pkg=github.com/dolanor/mitm
-  - ws=/drone/src/go/src/$pkg
+  - echo pkg=github.com/dolanor/mitm >> .env
+  - echo ws=/drone/src/go/src/$pkg >> .env
+  - export GOPATH=/drone/src/go >> .env
+  - . .env
   - git clone https://$pkg $ws
   - cd $ws
   - git checkout $DRONE_COMMIT
@@ -19,7 +21,7 @@ steps:
 - name: deps
   image: golang:1.13
   commands:
-  - export GOPATH=/drone/src/go
+  - .env && cd $ws
   - go env
   - pwd; ls;
   - cd /drone/src/go/src/github.com/dolanor/mitm
@@ -30,10 +32,12 @@ steps:
 - name: test
   image: golang:1.13
   commands:
+  - .env && cd $ws
   - go test
 
 - name: build
   image: golang:1.13
   commands:
+  - .env && cd $ws
   - go build
 
