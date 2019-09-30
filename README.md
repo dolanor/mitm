@@ -1,5 +1,8 @@
 # mitm 🕵
 
+[![Build Status](https://cloud.drone.io/api/badges/dolanor/mitm/status.svg)](https://cloud.drone.io/dolanor/mitm)
+
+
 Just a little TLS proxy for TCP connection. I created it to debug my attempt at connecting to SMTP server. So it works OK with
 text line protocols (`telnet`, `openssl s_client`). The goal is just to be able to see what passes through the encrypted TLS
 connection.  
