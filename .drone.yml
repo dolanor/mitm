@@ -13,7 +13,7 @@ steps:
   - echo $PWD
   - echo export pkg=github.com/dolanor/mitm >> .env
   - echo export ws=/drone/src/go/src/\$pkg >> .env
-  - export GOPATH=/drone/src/go >> .env
+  - echo export GOPATH=/drone/src/go >> .env
   - . $PWD/.env
   - echo $pkg
   - echo $ws
