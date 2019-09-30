@@ -3,13 +3,23 @@ kind: pipeline
 type: docker
 name: default
 
+clone:
+  disable: true
+
 steps:
+- name: clone
+  image: alpine:git
+  commands:
+  - git clone https://github.com/dolanor/mitm /drone/src/go/src/github.com/dolanor/mitm
+  - git checkout $DRONE_COMMIT
+
 - name: deps
   image: golang:1.13
   commands:
-  - export GOBIN=/drone/src/bin
+  - export GOPATH=/drone/src/go
   - go env
   - pwd; ls;
+  - cd /drone/src/go/src/github.com/dolanor/mitm
   - go get -v
   - go test
   - go build
