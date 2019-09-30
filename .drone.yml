@@ -11,8 +11,8 @@ steps:
   image: golang:1.13
   commands:
   - echo $PWD
-  - echo pkg=github.com/dolanor/mitm >> .env
-  - echo ws=/drone/src/go/src/$pkg >> .env
+  - echo export pkg=github.com/dolanor/mitm >> .env
+  - echo export ws=/drone/src/go/src/$pkg >> .env
   - export GOPATH=/drone/src/go >> .env
   - . $PWD/.env
   - echo $pkg
