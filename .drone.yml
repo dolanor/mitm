@@ -22,7 +22,7 @@ steps:
 - name: deps
   image: golang:1.13
   commands:
-  - . .env && cd $ws
+  - . $PWD/.env && cd $ws
   - go env
   - pwd; ls;
   - cd /drone/src/go/src/github.com/dolanor/mitm
@@ -33,12 +33,12 @@ steps:
 - name: test
   image: golang:1.13
   commands:
-  - . .env && cd $ws
+  - . $PWD/.env && cd $ws
   - go test
 
 - name: build
   image: golang:1.13
   commands:
-  - . .env && cd $ws
+  - . $PWD/.env && cd $ws
   - go build
 
