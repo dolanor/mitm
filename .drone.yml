@@ -7,6 +7,8 @@ steps:
 - name: deps
   image: golang:1.13
   commands:
+  - go env
+  - pwd; ls;
   - go get -v
   - go test
   - go build
