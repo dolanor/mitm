@@ -13,10 +13,10 @@ steps:
   - echo $PWD
   - echo pkg=github.com/dolanor/mitm >> .env
   - echo ws=/drone/src/go/src/$pkg >> .env
-  - echo $pkg
-  - echo $ws
   - export GOPATH=/drone/src/go >> .env
   - . $PWD/.env
+  - echo $pkg
+  - echo $ws
   - git clone https://$pkg $ws
   - cd $ws
   - git checkout $DRONE_COMMIT
