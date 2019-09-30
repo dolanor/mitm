@@ -7,6 +7,7 @@ steps:
 - name: deps
   image: golang:1.13
   commands:
+  - export GOBIN=/drone/src/bin
   - go env
   - pwd; ls;
   - go get -v
