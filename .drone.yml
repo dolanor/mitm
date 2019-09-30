@@ -10,10 +10,11 @@ steps:
 - name: clone
   image: golang:1.13
   commands:
+  - echo $PWD
   - echo pkg=github.com/dolanor/mitm >> .env
   - echo ws=/drone/src/go/src/$pkg >> .env
   - export GOPATH=/drone/src/go >> .env
-  - source .env
+  - . $PWD/.env
   - git clone https://$pkg $ws
   - cd $ws
   - git checkout $DRONE_COMMIT
