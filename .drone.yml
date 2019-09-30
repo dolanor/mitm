@@ -10,7 +10,10 @@ steps:
 - name: clone
   image: golang:1.13
   commands:
-  - git clone https://github.com/dolanor/mitm /drone/src/go/src/github.com/dolanor/mitm
+  - pkg=github.com/dolanor/mitm
+  - ws=/drone/src/go/src/$pkg
+  - git clone https://$pkg $ws
+  - cd $ws
   - git checkout $DRONE_COMMIT
 
 - name: deps
